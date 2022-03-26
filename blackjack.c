@@ -59,7 +59,6 @@ void intialise(){
 
 }
 
-
 typedef enum
 {
    Diamonds, Clubs, Hearts, Spades
@@ -167,7 +166,7 @@ static Card makeCard(Suit suit, Rank rank) //method makes card and takes in two 
 {
    Card theCard = { 0 }; //card struct members initialised to zero
 
-   theCard.mSuit = suit; //suit of card is set here
+   theCard.mSuit = suit; //suit of card is set here 
    theCard.mRank = rank; //rank of card is set here
 
    return(theCard); //returns card of type Card
@@ -231,14 +230,21 @@ static void HandingOut(Card *cards,struct Player *p){
       //triggers loop and loops through struct type player
       int count = 0;
       printf("\nPlayer %s",p[i].first_name);
-      for(int k = index; count <2 && index>=0; k--,index--){
-         //triggers loop that adds value of rank to player total, simulating the handing out of cards
-         p[i].total += RanktoInt(rankToString(cards[k].mRank)); //need to be able to sum up total based on rank,also has to prompt user on whether they want an ACE to be counted as a 1 or 11
+      for(; count <2 && index>=0; index--){
+         //triggers loop that adds value of rank to player total, simulating the handing out of cards, using the fact that index is a static, hence no intialisation is needed
+         p[i].total += RanktoInt(rankToString(cards[index].mRank)); //need to be able to sum up total based on rank,also has to prompt user on whether they want an ACE to be counted as a 1 or 11
          ++count; //increments the number of cards given
       }
       if(p[i].total>21) p[i].state = false;
-      else if(p[i].total == 21) p[i].blackJack == true;
-      else continue;
+      else if(p[i].total == 21){
+         p[i].blackJack == true; 
+         p[i].state = true;
+      }
+      else{
+         //else if total is not bigger than 21 or a blackjack meaning it is some number below 21 means players is still in game
+         p[i].state = true;
+      }
+
       
    }
    printf("\nTotals so far");
@@ -260,13 +266,14 @@ static void CheckTotals(struct Player *pntr){
       //triggers loop to check total for each playeR
       if (pntr[i].state == 1 && pntr[i].blackJack == 1)
       {
-         printf("\nPlayer %s is still has hand total to blackjack",pntr[i].first_name);
+         printf("\nPlayer %s has card totalling blackjack",pntr[i].first_name);
       }
 
       else if(pntr[i].state == 1 && pntr[i].blackJack == 0){
          printf("\nPlayer %s still in game with hand total %d",pntr[i].first_name,pntr[i].total);
       }
       else{
+         //meaning player has state 0 which a bust
          printf("\nPlayer %s you have busted",pntr[i].first_name);
       }
       
@@ -274,10 +281,11 @@ static void CheckTotals(struct Player *pntr){
    }
 }
 
+
 static void getFirstDealerCard(struct Dealer *d,Card *cards){
    //method takes two argument which is a pointer to type struct Dealer and pointer to type Card
-   d->total+= RanktoInt(rankToString(cards[index].mRank));
-   --index;
+   d->total+= RanktoInt(rankToString(cards[index].mRank)); //takes in rank converts so string then num
+   --index; //decrements index to card below the card that was taken
    printf("\nDealer first card is %d",d->total); //tells player the dealers first card
    d->total+= RanktoInt(rankToString(cards[index].mRank)); //gets second card for dealer but does not show the total value with the card
    --index;
@@ -303,28 +311,28 @@ static void AskPlayers(struct Player *ppntr,Card *cards){
                index --;
                if(ppntr[i].total == 21){
                   //triggered if player total is 21
-                  ppntr[i].blackJack = true;
+                  ppntr[i].blackJack = true; // if hand is blakck jack then user automatically breaks and blackjack state is set to true
                   break;
                }
                else if(ppntr[i].total>21){
+                  // if hand goes over 21 player automatically busts 
                   printf("Player %s you have busted",ppntr[i].first_name);
                   ppntr[i].state = false;
                   break;
                }
-               continue;
             }
 
             else if (c == 's')
             {
-               //hold triggers the infinite for loop to end and the dealer to move through to the next player hand
-               if(ppntr[i].total == 21){
-                  //triggered if player total equals to 21, player member(blackJack) becomes true
-                  ppntr[i].blackJack == true;
-               }
+               // //hold triggers the infinite for loop to end and the dealer to move through to the next player hand
+               // if(ppntr[i].total == 21){
+               //    //triggered if player total equals to 21, player member(blackJack) becomes true
+               //    ppntr[i].blackJack == true;
+               // }
                break;
             }
 
-            else continue;
+            else continue; //if user does not stand or hold
             
          }
       }
@@ -342,8 +350,8 @@ static void DealerTotal(struct Dealer *dntr,Card *cards){
    while (dntr->total<17)
    {
       //loop triggers and runs until condition evalulates to false
-      dntr->total +=RanktoInt(rankToString(cards[index].mRank));
-      --index;
+      dntr->total +=RanktoInt(rankToString(cards[index].mRank)); 
+      --index; //decrements down 
    }
    printf("\nDealer final total is %d",dntr->total);
    
@@ -368,12 +376,11 @@ static void findWinners(struct Player *p,struct Dealer *d){
       for(int i =0; i<NUMOFPLAYERS; i++){
          //loops to search for players that also have a hand that totals to a blackjack
          if(p[i].blackJack == 1){
-            printf("\nPlayer %s has also drawn a blackjack",p[i].first_name);
+            printf("\nPlayer %s has also drawn a blackjack and also won",p[i].first_name);
             ++count;
          }
       }
-      if(count == 0) printf("No other players have hand totalling to blackjack,hence, Dealer has won");
-      else printf("\nDealer and player(s) have hands totalling blackjack");
+      if(count == 0) printf("No other players have hand totalling to blackjack,hence, Dealer has won only");
 
    }
    
@@ -390,17 +397,33 @@ static void findWinners(struct Player *p,struct Dealer *d){
    
 }
 
+static void reset(Card *cards,struct Player *p,struct Dealer *d){
+   //area to reset variables and reshuffle, takes in cards pointer that points to type Card which is an array, player and dealer are reset
+   index = 52; // static variable reset to 52;
+   shuffle(cards,N_CARDS); // shuffles card
+   for (int i = 0; i < NUMOFPLAYERS; i++)
+   {
+      p[i].state = 1;
+      p[i].blackJack = 0;
+      p[i].total = 0;  
+   }
+
+   d->total = 0; //dealer total is equal to zero
+   
+   
+}
+
 int main(){
    // char *stringpntr = "Two";
    char a;
    int play = true;
+   intialise(); //intialises for a session of blackjack with 5 players 
+   Card cards[N_CARDS]; //Creates an array of structs 
+   CreateDeck(cards); //method creates card deck of cards with each individual card struct element in an array having an suit and rank
+   shuffle(cards,N_CARDS); //method shuffle card by assiging each array from index 0 to 51 a random index and swapping the cards at this index
+   printf("\nTesting");
    while (play)
    {    
-      intialise(); //intialises for a session of blackjack with 5 players 
-      Card cards[N_CARDS]; //Creates an array of structs 
-      CreateDeck(cards); //method creates card deck of cards with each individual card struct element in an array having an suit and rank
-      shuffle(cards,N_CARDS); //method shuffle card by assiging each array from index 0 to 51 a random index and swapping the cards at this index
-      printf("\nTesting");
       //Handing out cards to each player and dealer,takes two arguments, pointer to Card type(Deck of type struct Card) and pointer to struct Player which is an array of player struct called Game ans struct Dealer pointer to Dealer struct (&Dealer)
       HandingOut(cards,Game); 
       getFirstDealerCard(&Dealer,cards);
@@ -409,7 +432,10 @@ int main(){
       findWinners(Game,&Dealer);
       printf("\nDo you want you want to play again?:");
       a = getch();
-      if (a == 'y') continue;
+      if (a == 'y'){
+         reset(cards,Game,&Dealer);
+         continue;
+      }
       else play = false;
    }
     return(0);
