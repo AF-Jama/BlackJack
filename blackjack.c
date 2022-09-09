@@ -37,7 +37,7 @@ struct Dealer
 void intialise(){
     //takes in one argument which is the number of players must be a minumum of 2 and maximum of 5
     index = 51;
-    char name[50];
+    char name[50]; // temp string buffer of length 50
     int len;
     for(int i = 0; i<NUMOFPLAYERS; i++){
         //triggers loop which instantiates each player
